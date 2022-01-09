@@ -67,7 +67,7 @@ export const loader = async () => {
     const uncompressedString = Buffer.from(uncompressedData).toString('utf-8').toString();
     console.log(`strlen: ${uncompressedString.length}`);
     const rawData = JSON.parse(uncompressedString);
-    const filteredData = filterChild(0, rawData as MainNode);
+    const filteredData = filterChild(0, rawData as MainNode) as MainNode;
     console.log(`filteredData: ${!!filteredData}`);
     return filteredData;
 }
@@ -102,6 +102,6 @@ const RenderMain = ({ node, level }: { node: MainNode, level: number }) => {
 }
 
 export default () => {
-    const data = useLoaderData() as MainNode;
+    const data = useLoaderData<Awaited<ReturnType<typeof loader>>>();
     return <RenderMain node={data} level={0}/>;
 }
