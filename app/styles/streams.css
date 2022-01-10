@@ -1,0 +1,9 @@
+.expandable {
+    cursor: pointer;
+}
+.collapsible {
+    display: inherit;
+}
+.collapsed {
+    display: none;
+}
