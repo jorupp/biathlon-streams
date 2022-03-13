@@ -22,6 +22,7 @@ interface VodNode extends BaseNode {
     date?: string;
     frame_url: string;
     isReplay: boolean;
+    isHighlights: boolean;
 }
 
 const filterVod = (data: VodNode): VodNode | null => {
@@ -29,13 +30,15 @@ const filterVod = (data: VodNode): VodNode | null => {
     const contains = (needle: string) => {
         return (name || '').indexOf(needle) >= 0;
     }
-    const isReplay = contains('Replay') || !(contains('Best of') || contains('Press') || contains('Highlights') || contains('Zeroing') || contains('of the Week') || contains('Interview') || contains('Throwback') || contains('This Week in') || contains('Target ') || contains('Ultimate Roommate') || contains('Being back') || contains('Last Time in'));
+    const isReplay = contains('Replay'); // || !(contains('Best of') || contains('Press') || contains('Highlights') || contains('Zeroing') || contains('of the Week') || contains('Interview') || contains('Throwback') || contains('This Week in') || contains('Target ') || contains('Ultimate Roommate') || contains('Being back') || contains('Last Time in') || contains('wins'));
+    const isHighlights = contains('Highlights');
     return {
         id,
         name,
         frame_url,
         date,
         isReplay,
+        isHighlights,
     };
 }
 const filterChild = (level: number, data: MainNode): MainNode | null => {
@@ -91,6 +94,9 @@ const RenderMain = ({ node, level }: { node: MainNode, level: number }) => {
     const [ expanded, setExpanded ] = useState(level === 0);
     const toggleExpanded = useCallback(() => setExpanded(v => !v), [ setExpanded ]);
 
+    const [ highlightsExpanded, setHighlightsExpanded ] = useState(false);
+    const toggleHighlightsExpanded = useCallback(() => setHighlightsExpanded(v => !v), [ setHighlightsExpanded ]);
+
     const [ otherExpanded, setOtherExpanded ] = useState(false);
     const toggleOtherExpanded = useCallback(() => setOtherExpanded(v => !v), [ setOtherExpanded ]);
 
@@ -99,7 +105,8 @@ const RenderMain = ({ node, level }: { node: MainNode, level: number }) => {
     }
 
     let replays = node.vod.filter(i => i.isReplay);
-    let otherVod = node.vod.filter(i => !i.isReplay);
+    let highlights = node.vod.filter(i => i.isHighlights);
+    let otherVod = node.vod.filter(i => !i.isReplay && !i.isHighlights);
 
     // if there are _only_ other VODs, just use them as the main thing
     if(!replays.length && otherVod.length) {
@@ -121,6 +128,16 @@ const RenderMain = ({ node, level }: { node: MainNode, level: number }) => {
             <ul className={ expanded ? 'collapsible' : 'collapsed'}>
                 {node.children.map(i => <li key={i.id}><RenderMain node={i} level={level+1}/></li>)}
                 {replays.map(i => <li key={i.id}><RenderVod node={i}/></li>)}
+                { !!highlights.length && (<>
+                    <li>
+                        <span className="expandable" onClick={toggleHighlightsExpanded}>Highlights {highlights.length} videos &gt;</span>
+                        <div>
+                            <ul className={ highlightsExpanded ? 'collapsible' : 'collapsed'}>
+                                {highlights.map(i => <li key={i.id}><RenderVod node={i}/></li>)}
+                            </ul>
+                        </div>
+                    </li>                
+                </>)}
                 { !!otherVod.length && (<>
                     <li>
                         <span className="expandable" onClick={toggleOtherExpanded}>Other {otherVod.length} videos &gt;</span>
