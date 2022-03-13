@@ -113,7 +113,6 @@ const RenderDownloads = ({ nodes, parents }: { nodes: VodNode[], parents: MainNo
 const RenderVod = ({ node }: { node: VodNode }) => {
     return (<>
         <a href={node.frame_url} target="_blank">{node.name}</a> 
-        <a href={`/buildStream?url=${encodeURIComponent(node.frame_url)}`} target="_blank">{node.name}</a> 
         {node.date && (
             <> - {new Date(parseInt(node.date) * 1000).toLocaleString()}</>
         )}
