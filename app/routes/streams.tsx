@@ -1,7 +1,7 @@
 import { useLoaderData } from "remix";
 import { ungzip } from 'pako';
 import styles from '~/styles/streams.css';
-import { useCallback, useState } from "react";
+import React, { useCallback, useState } from "react";
 import { max } from 'lodash';
 
 export const links = () => {
@@ -17,6 +17,7 @@ interface MainNode extends BaseNode {
     latestdate?: number;
     children: MainNode[],
     vod: VodNode[]
+    index?: number;
 }
 interface VodNode extends BaseNode {
     date?: string;
@@ -58,6 +59,9 @@ const filterChild = (level: number, data: MainNode): MainNode | null => {
     //     }
     // }
     const children = (data.children || []).map(i => filterChild(level + 1, i)).filter(Boolean).map(i => i as MainNode).sort((a,b) => (b.latestdate ?? 0)-(a.latestdate ?? 0));
+    for(let i=0; i<children.length; i++) {
+        children[i].index = children.length-i;
+    }
     const vod = (data.vod || []).map(filterVod).filter(Boolean) as VodNode[];
     const latestdate = max(children.map(i => i.latestdate).concat(vod.map(i => i.date ? parseInt(i.date) : undefined)).concat([startdate ? parseInt(startdate) : undefined]).filter(Boolean));
     return {
@@ -81,16 +85,42 @@ export const loader = async () => {
     return filteredData;
 }
 
+const RenderDownloads = ({ nodes, parents }: { nodes: VodNode[], parents: MainNode[] }) => {
+    if (!nodes.length) {
+        return null;
+    }
+    const prefix1 = parents[1].name;
+    // https://stackoverflow.com/a/37511463 (to clean up the non-latin names)
+    const prefix2 = parents.slice(2).map(i => i.name).join(' - ').normalize("NFD").replace(/\p{Diacritic}/gu, "");
+
+    return <code>
+        <pre>
+            {nodes.map((i, ix) => {
+                const key = new URL(i.frame_url).pathname.split('/')[2];
+                const position = `s2022w${(parents.at(-1)?.index + '').padStart(2, '0')}r${(nodes.length-ix + '').padStart(2, '0')}`;
+                const name = `${prefix1} - ${position} - ${prefix2} - ${i.name}`;
+
+                return (
+                    <React.Fragment key={key}>
+                        npx node-hls-downloader -q best -c 5 -o "{name}.mp4" http://localhost:3000/stream/{key}{'\n'}
+                    </React.Fragment>
+                );
+            })}
+        </pre>
+    </code>
+}
+
 const RenderVod = ({ node }: { node: VodNode }) => {
     return (<>
         <a href={node.frame_url} target="_blank">{node.name}</a> 
+        <a href={`/buildStream?url=${encodeURIComponent(node.frame_url)}`} target="_blank">{node.name}</a> 
         {node.date && (
             <> - {new Date(parseInt(node.date) * 1000).toLocaleString()}</>
         )}
     </>);
 }
 
-const RenderMain = ({ node, level }: { node: MainNode, level: number }) => {
+const RenderMain = ({ node, level, parents }: { parents: MainNode[], node: MainNode, level: number }) => {
     const [ expanded, setExpanded ] = useState(level === 0);
     const toggleExpanded = useCallback(() => setExpanded(v => !v), [ setExpanded ]);
 
@@ -126,25 +156,28 @@ const RenderMain = ({ node, level }: { node: MainNode, level: number }) => {
                 )}
             </p> }
             <ul className={ expanded ? 'collapsible' : 'collapsed'}>
-                {node.children.map(i => <li key={i.id}><RenderMain node={i} level={level+1}/></li>)}
+                {node.children.map(i => <li key={i.id}><RenderMain node={i} level={level+1} parents={[...parents, node]}/></li>)}
                 {replays.map(i => <li key={i.id}><RenderVod node={i}/></li>)}
+                <RenderDownloads nodes={replays} parents={[...parents, node]} />
                 { !!highlights.length && (<>
                     <li>
                         <span className="expandable" onClick={toggleHighlightsExpanded}>Highlights {highlights.length} videos &gt;</span>
-                        <div>
-                            <ul className={ highlightsExpanded ? 'collapsible' : 'collapsed'}>
+                        <div className={ highlightsExpanded ? 'collapsible' : 'collapsed'}>
+                            <ul>
                                 {highlights.map(i => <li key={i.id}><RenderVod node={i}/></li>)}
                             </ul>
+                            <RenderDownloads nodes={highlights} parents={[...parents, node]}/>
                         </div>
                     </li>                
                 </>)}
                 { !!otherVod.length && (<>
                     <li>
                         <span className="expandable" onClick={toggleOtherExpanded}>Other {otherVod.length} videos &gt;</span>
-                        <div>
-                            <ul className={ otherExpanded ? 'collapsible' : 'collapsed'}>
+                        <div className={ otherExpanded ? 'collapsible' : 'collapsed'}>
+                            <ul>
                                 {otherVod.map(i => <li key={i.id}><RenderVod node={i}/></li>)}
                             </ul>
+                            <RenderDownloads nodes={otherVod} parents={[...parents, node]}/>
                         </div>
                     </li>                
                 </>)}
@@ -155,5 +188,5 @@ const RenderMain = ({ node, level }: { node: MainNode, level: number }) => {
 
 export default () => {
     const data = useLoaderData<Awaited<ReturnType<typeof loader>>>();
-    return <RenderMain node={data} level={0}/>;
+    return <RenderMain node={data} level={0} parents={[]} />;
 }
