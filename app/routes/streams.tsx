@@ -107,9 +107,11 @@ const RenderDownloads = ({ nodes, parents }: { nodes: VodNode[], parents: MainNo
                 const position = `s${year}w${(parents.at(-1)?.index + '').padStart(2, '0')}r${(nodes.length-ix + '').padStart(2, '0')}`;
                 const name = `${prefix1} - ${position} - ${prefix2} - ${i.name}`;
 
+                // try up to 3 times (node-hls-downloader doesn't have an argument to do the retries itself, so we just rely on the exit code and run it 3 times)
+                const cmd = `npx node-hls-downloader -q best -c ${parallelStreams} -o \"${name}.mp4\" http://localhost:3000/stream/${key} -h \"User-Agent: ${userAgent}\"`;
                 return (
                     <React.Fragment key={key}>
-                        npx node-hls-downloader -q best -c {parallelStreams} -o "{name}.mp4" http://localhost:3000/stream/{key} -h "User-Agent: {userAgent}"{'\n'}
+                        {cmd} || {cmd} || {cmd}{'\n'}
                     </React.Fragment>
                 );
             })}
