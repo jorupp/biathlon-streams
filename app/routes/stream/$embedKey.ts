@@ -25,6 +25,8 @@ export async function loader({ params }: Parameters<LoaderFunction>[0]) {
         })).json();
 
         if (playData && playData.url) {
+            // TODO: investigate whether we could just send all of what we're doing here to node-hls-downloader as header parameters and ditch all this code...
+            //       I _think_ we'd have to keep the part to this point and pass playData.url to node-hls-downloader w/ the user-agent header
                 
             const masterUrl = playData.url;
             const masterData = await (await fetch(masterUrl, {
@@ -37,6 +39,7 @@ export async function loader({ params }: Parameters<LoaderFunction>[0]) {
             const streams = [];
             let stream: null | { bandwidth?: number, url?: string } = null;
             const masterDataRows = masterData.split(/[\r\n]/);
+            // TODO: we're ignoring the EXT-X-I-FRAME-STREAM-INF entries here - based on https://github.com/grafov/m3u8/issues/91 they appear to be a seek index, which we don't need
             for(const row of masterDataRows) {
                 if (row.indexOf("BANDWIDTH") >= 0) {
                     if (stream) {
