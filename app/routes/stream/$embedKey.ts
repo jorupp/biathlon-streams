@@ -74,16 +74,14 @@ export async function loader({ params }: Parameters<LoaderFunction>[0]) {
 
                 // rewrite the URLs to be absolute
                 const prefix = new URL('.', streamUrl).href;
-                // console.log({ masterUrl, streamUrl, prefix });
+                // console.log({ referer, playUrl, masterUrl, streamUrl, prefix });
                 const outputStreamData = [];
                 for(const streamLine of streamData.split('\n')) {
                     if (streamLine.startsWith('#')) {
                         outputStreamData.push(streamLine);
-                    }
-                    else {
+                    } else if (streamLine) {
                         outputStreamData.push(prefix + streamLine);
                     }
-
                 }
                 
                 return new Response(outputStreamData.join('\n'), {
