@@ -64,7 +64,7 @@ export async function loader({ params }: Parameters<LoaderFunction>[0]) {
 
             if (streams.length > 0) {
                 // use masterUrl as the base here - it has a ~1d expiration, while playData.url has a ~1m expiration
-                const streamUrl = new URL(streams[1].url!, masterUrl).href;
+                const streamUrl = new URL(streams[0].url!, masterUrl).href;
                 const streamData = await (await fetch(streamUrl, {
                     headers: {
                         ...headers,
