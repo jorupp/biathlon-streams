@@ -3,6 +3,7 @@ import { ungzip } from 'pako';
 import styles from '~/styles/streams.css';
 import React, { useCallback, useState } from "react";
 import { max } from 'lodash';
+import { parallelStreams, userAgent } from "~/constants";
 
 export const links = () => {
     return [{ rel: "stylesheet", href: styles }];
@@ -102,7 +103,7 @@ const RenderDownloads = ({ nodes, parents }: { nodes: VodNode[], parents: MainNo
 
                 return (
                     <React.Fragment key={key}>
-                        npx node-hls-downloader -q best -c 5 -o "{name}.mp4" http://localhost:3000/stream/{key}{'\n'}
+                        npx node-hls-downloader -q best -c {parallelStreams} -o "{name}.mp4" http://localhost:3000/stream/{key} -h "User-Agent: {userAgent}"{'\n'}
                     </React.Fragment>
                 );
             })}
