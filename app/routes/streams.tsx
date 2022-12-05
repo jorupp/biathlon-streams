@@ -98,7 +98,13 @@ const RenderDownloads = ({ nodes, parents }: { nodes: VodNode[], parents: MainNo
         <pre>
             {nodes.map((i, ix) => {
                 const key = new URL(i.frame_url).pathname.split('/')[2];
-                const position = `s2022w${(parents.at(-1)?.index + '').padStart(2, '0')}r${(nodes.length-ix + '').padStart(2, '0')}`;
+                const yearParts = parents.at(-2)?.name?.split(' ')?.[0].split('-');
+                const year = yearParts && yearParts.length > 0
+                    ? yearParts.length == 1
+                        ? yearParts[0]
+                        : yearParts[0].substring(0, yearParts[0].length - yearParts[1].length) + yearParts[1]
+                    : null;
+                const position = `s${year}w${(parents.at(-1)?.index + '').padStart(2, '0')}r${(nodes.length-ix + '').padStart(2, '0')}`;
                 const name = `${prefix1} - ${position} - ${prefix2} - ${i.name}`;
 
                 return (
