@@ -32,11 +32,11 @@ const filterVod = (data: VodNode): VodNode | null => {
     const contains = (needle: string) => {
         return (name || '').indexOf(needle) >= 0;
     }
-    const isReplay = contains('Replay'); // || !(contains('Best of') || contains('Press') || contains('Highlights') || contains('Zeroing') || contains('of the Week') || contains('Interview') || contains('Throwback') || contains('This Week in') || contains('Target ') || contains('Ultimate Roommate') || contains('Being back') || contains('Last Time in') || contains('wins'));
+    const isReplay = contains('Replay') || contains('Full Race'); // || !(contains('Best of') || contains('Press') || contains('Highlights') || contains('Zeroing') || contains('of the Week') || contains('Interview') || contains('Throwback') || contains('This Week in') || contains('Target ') || contains('Ultimate Roommate') || contains('Being back') || contains('Last Time in') || contains('wins'));
     const isHighlights = contains('Highlights');
     return {
         id,
-        name,
+        name: name.replace(' - Full Race', '').replace(' - Replay', ''),
         frame_url,
         date,
         isReplay,
